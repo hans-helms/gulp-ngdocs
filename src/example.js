@@ -133,13 +133,16 @@ exports.Example.prototype.toHtmlTabs = function() {
 };
 
 exports.Example.prototype.toHtmlEmbed = function() {
+
   var out = [];
   out.push('<div class="well doc-example-live animate-container"');
   if(this.animations) {
     out.push(" ng-class=\"{'animations-off':animationsOff == true}\"");
   }
   out.push(' ng-embed-app="' + this.module + '"');
-  out.push(' ng-set-html="' + this.html[0].id + '"');
+  if(this.html[0]) {
+    out.push(' ng-set-html="' + this.html[0].id + '"');
+  }
   out.push(' ng-eval-javascript="' + ids(this.js) + '">');
   out.push('</div>');
   return out.join('');

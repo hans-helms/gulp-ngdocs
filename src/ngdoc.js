@@ -62,6 +62,7 @@ function Doc(text, file, line, options) {
   this.events = this.events || [];
   this.links = this.links || [];
   this.anchors = this.anchors || [];
+
 }
 Doc.METADATA_IGNORE = (function() {
   var words = fs.readFileSync(__dirname + '/ignore.words', 'utf8');
@@ -392,7 +393,9 @@ Doc.prototype = {
       }
     });
     flush();
+
     this.shortName = this.name ? this.name.split(/[\.:#]/).pop().trim() : '';
+
     this.id = this.id || // if we have an id just use it
       (this.ngdoc === 'error' ? this.name : '') ||
       (((this.file||'').match(/.*(\/|\\)([^(\/|\\)]*)\.ngdoc/)||{})[2]) || // try to extract it from file name
@@ -524,7 +527,7 @@ Doc.prototype = {
       });
 
       (self['html_usage_' + self.ngdoc] || function() {
-        throw new Error("Don't know how to format @ngdoc: " + self.ngdoc);
+        console.error("Don't know how to format @ngdoc: " + self.ngdoc, self.file, self.line, "\n");
       }).call(self, dom);
 
       dom.h('Example', self.example, dom.html);
@@ -1026,6 +1029,7 @@ function title(doc) {
 
 
 function scenarios(docs){
+
   var specs = [];
 
   specs.push('describe("angular+jqlite", function() {');
@@ -1259,19 +1263,23 @@ function merge(docs){
   }
 
   function findParent(doc, name) {
+
     var parentName = doc[name + 'Of'];
     if (!parentName) return false;
 
     var parent = byFullId[doc.section + '/' + parentName];
-    if (!parent)
-      throw new Error("No parent named '" + parentName + "' for '" +
-        doc.name + "' in @" + name + "Of.");
+    if (!parent) {
+      console.error("Error in "+doc.file+", No parent named '" + parentName + "' for '" + doc.name
+         + "' in @" + name + "Of." + "||" + doc.section + " - " + parentName, "\n");
+      return false;
+    } else {
+      var listName = (name + 's').replace(/ys$/, 'ies');
+      var list = parent[listName] = (parent[listName] || []);
+      list.push(doc);
+      list.sort(orderByName);
+      return true;
+    }
 
-    var listName = (name + 's').replace(/ys$/, 'ies');
-    var list = parent[listName] = (parent[listName] || []);
-    list.push(doc);
-    list.sort(orderByName);
-    return true;
   }
 
   function orderByName(a, b){
